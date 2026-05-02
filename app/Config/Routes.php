@@ -21,3 +21,11 @@ $routes->get('/auth/register', function() {
 
 $routes->post('login', 'Auth::login');
 $routes->post('register', 'Auth::register');
+
+
+$routes->get('products', 'ProductController::index');
+$routes->post('products', 'ProductController::create');
+
+$routes->get('upload', function() {
+    return view('upload');
+});
