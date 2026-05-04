@@ -24,7 +24,10 @@ $routes->post('register', 'Auth::register');
 
 
 $routes->get('products', 'ProductController::index');
-$routes->post('products', 'ProductController::create');
+$routes->get('api/images', 'ImageController::index');
+$routes->post('api/images', 'ImageController::create');
+$routes->post('api/images/update/(:num)', 'ImageController::update/$1');
+$routes->delete('api/images/(:num)', 'ImageController::delete/$1');
 
 $routes->get('upload', function() {
     return view('upload');
