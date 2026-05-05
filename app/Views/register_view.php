@@ -109,47 +109,42 @@
 
     <script>
         async function doRegister() {
-            const user = document.getElementById('reg_username');
-            const pass = document.getElementById('reg_password');
+        const user = document.getElementById('reg_username');
+        const pass = document.getElementById('reg_password');
 
-            const username = user.value;
-            const password = pass.value;
+        const username = user.value;
+        const password = pass.value;
 
-            if(!username || !password) {
-                alert('Harap isi semua field');
-                return;
-            }
-
-            try {
-                const response = await fetch('/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username: username,
-                        password: password
-                    })
-                });
-
-                const data = await response.json();
-
-                if(response.ok) {
-                    alert("Register berhasil! Silahkan login.");
-                    user.value = '';
-                    pass.value = '';
-
-                    window.location.href = '/auth/login';
-
-                } else {
-                    const errorMsg = data.messages ? JSON.stringify(data.messages) : "Register gagal!";
-                    alert("Register gagal: " + errorMsg);
-                }
-            } catch (err) {
-                console.error("Fetch error:", error);
-                alert("Terjadi kesalahan koneksi ke server.");
-            }
+        if(!username || !password) {
+            alert('Harap isi semua field');
+            return;
         }
+
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if(response.ok) {
+                alert("Register berhasil! Silahkan login.");
+                window.location.href = '/auth/login';
+            } else {
+                alert("Register gagal");
+            }
+
+        } catch (err) {
+            console.error("Fetch error:", err);
+        }
+    }
     </script>
 </body>
 </html>
