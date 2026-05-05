@@ -7,120 +7,108 @@ use App\Models\ImageModel;
 
 class ImageController extends ResourceController
 {
-     public function create()
-    {
-        try {
-            $file = $this->request->getFile('image');
-            $title = $this->request->getPost('title');
-
-            if (!$title) {
-                return $this->fail('Title wajib diisi');
-            }
-
-            if (!$file || !$file->isValid()) {
-                return $this->fail('File tidak valid');
-            }
-
-            $mime = $file->getMimeType();
-
-            if (!in_array($mime, ['image/jpg', 'image/jpeg', 'image/png', 'image/gif'])) {
-                return $this->fail('File harus berupa gambar');
-            }
-
-            $newName = $file->getRandomName();
-
-            if (!$file->hasMoved()) {
-                $file->move(FCPATH . 'uploads', $newName);
-            }
-
-            $model = new \App\Models\ImageModel();
-
-            $model->insert([
-                'nama' => $title,
-                'deskripsi' => $newName
-            ]);
-
-            return $this->respondCreated([
-                'status' => 'success',
-                'message' => 'Upload berhasil',
-                'data' => [
-                    'nama' => $title,
-                    'deskripsi' => $newName,
-                    'url' => base_url('uploads/' . $newName)
-                ]
-            ]);
-
-        } catch (\Throwable $e) {
-            return $this->fail($e->getMessage());
-        }
-    }
     public function index()
     {
-        $model = new \App\Models\ImageModel();
-        $data = $model->findAll();
-
-        return $this->respond($data);
+        return $this->respond((new ImageModel())->findAll());
     }
 
-    public function delete($id = null)
+    public function create()
     {
-        $model = new \App\Models\ImageModel();
-        $data = $model->find($id);
+        $file = $this->request->getFile('image');
+        $title = $this->request->getPost('title');
 
-        if (!$data) {
-            return $this->failNotFound('Data tidak ditemukan');
+        if (!$title) return $this->fail('Title wajib diisi');
+        if (!$file || !$file->isValid()) return $this->fail('File tidak valid');
+
+        if ($file->getSize() > 2 * 1024 * 1024) {
+            return $this->fail('Max 2MB');
         }
 
-        // hapus file
-        $filePath = FCPATH . 'uploads/' . $data['deskripsi'];
-        if (file_exists($filePath)) {
-            unlink($filePath);
+        $mime = $file->getMimeType();
+
+        if (!in_array($mime, ['image/jpeg','image/png','image/gif','image/webp'])) {
+            return $this->fail('Harus gambar');
         }
 
-        $model->delete($id);
+        $name = $file->getRandomName();
+        $file->move(FCPATH . 'uploads', $name);
 
-        return $this->respond([
-            'status' => 'success',
-            'message' => 'Data berhasil dihapus'
+        (new ImageModel())->insert([
+            'nama' => $title,
+            'deskripsi' => $name
         ]);
+
+        return $this->respondCreated(['status' => 'created']);
     }
 
     public function update($id = null)
     {
-        $model = new \App\Models\ImageModel();
+        $model = new ImageModel();
         $data = $model->find($id);
 
-        if (!$data) {
-            return $this->failNotFound('Data tidak ditemukan');
-        }
+        if (!$data) return $this->failNotFound();
 
         $file = $this->request->getFile('image');
         $title = $this->request->getPost('title');
 
-        $updateData = [];
+        $update = [];
 
-        if ($title) {
-            $updateData['nama'] = $title;
-        }
+        if ($title) $update['nama'] = $title;
 
         if ($file && $file->isValid()) {
-            $newName = $file->getRandomName();
-            $file->move(FCPATH . 'uploads', $newName);
 
-            // hapus file lama
-            $oldPath = FCPATH . 'uploads/' . $data['deskripsi'];
-            if (file_exists($oldPath)) {
-                unlink($oldPath);
+            if ($file->getSize() > 2 * 1024 * 1024) {
+                return $this->fail('Max 2MB');
             }
 
-            $updateData['deskripsi'] = $newName;
+            $mime = $file->getMimeType();
+
+            if (!in_array($mime, ['image/jpeg','image/png','image/gif','image/webp'])) {
+                return $this->fail('Harus gambar');
+            }
+
+            $name = $file->getRandomName();
+            $file->move(FCPATH . 'uploads', $name);
+
+            $oldPath = FCPATH . 'uploads/' . $data['deskripsi'];
+            if (file_exists($oldPath)) unlink($oldPath);
+
+            $update['deskripsi'] = $name;
         }
 
-        $model->update($id, $updateData);
+        if (empty($update)) return $this->fail('Tidak ada perubahan');
 
-        return $this->respond([
-            'status' => 'success',
-            'message' => 'Data berhasil diupdate'
-        ]);
+        $model->update($id, $update);
+
+        return $this->respond(['status' => 'updated']);
+    }
+
+    public function delete($id = null)
+    {
+        $model = new ImageModel();
+        $data = $model->find($id);
+
+        if (!$data) return $this->failNotFound();
+
+        $path = FCPATH . 'uploads/' . $data['deskripsi'];
+        if (file_exists($path)) unlink($path);
+
+        $model->delete($id);
+
+        return $this->respond(['status' => 'deleted']);
+    }
+
+    public function deleteAll()
+    {
+        $model = new ImageModel();
+
+        foreach ($model->findAll() as $d) {
+            $path = FCPATH . 'uploads/' . $d['deskripsi'];
+            if (file_exists($path)) unlink($path);
+        }
+
+        $model->truncate();
+
+        return $this->respond(['status' => 'all deleted']);
     }
 }

@@ -1,48 +1,25 @@
 <?php
+
 namespace App\Controllers;
 
-use CodeIgniter\RESTful\ResourceController;
 use App\Models\ImageModel;
 
-class ProductController extends ResourceController
+class ProductController extends BaseController
 {
-    public function index(): string
+    public function index()
     {
-        return view('products');
+        return view('product_view');
     }
 
-    public function create()
+    public function detail(int $id) // tambahin type biar warning hilang
     {
-        $file = $this->request->getFile('image');
-        $title = $this->request->getPost('title');
-
-        if (!$title) {
-            return $this->fail('Title wajib diisi');
-        }
-
-        if (!$file || !$file->isValid()) {
-            return $this->fail('File tidak valid');
-        }
-
-        if (!$file->isImage()) {
-            return $this->fail('Harus gambar');
-        }
-
-        $newName = $file->getRandomName();
-        $file->move(FCPATH . 'uploads', $newName);
-        
         $model = new ImageModel();
+        $row = $model->find($id);
 
-        $model = new ImageModel();
+        if (!$row) {
+            return redirect()->to('/products');
+        }
 
-        $id = $model->insert([
-            'nama' => $title,
-            'deskripsi' => $newName
-        ]);
-
-        dd($id);
-        return $this->respondCreated([
-            'status' => 'success'
-        ]);
+        return view('product_detail', ['data' => $row]);
     }
 }
